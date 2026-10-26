@@ -138,4 +138,5 @@ Puis :
 ```bash
 pytest                                   # tests unitaires, sans appel réseau
 python -m pipeline_meteo.extract         # écrit data/raw/date=AAAA-MM-JJ/weather.ndjson
+python -m pipeline_meteo.load            # envoie dans Cloud Storage puis charge dans BigQuery
 ```

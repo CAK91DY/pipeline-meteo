@@ -7,7 +7,7 @@ Pipeline de données quotidien sur Google Cloud. Il extrait la météo de plusie
 | Étape | Contenu | État |
 |---|---|---|
 | 1. Fondations | Extraction Python, gestion sécurisée de la clé, ressources GCP | Fait |
-| 2. Chargement | Envoi dans Cloud Storage, chargement idempotent dans BigQuery | À faire |
+| 2. Chargement | Envoi dans Cloud Storage, chargement idempotent dans BigQuery | Fait |
 | 3. Transformation et orchestration | Modèles et tests dbt, DAG Airflow (Docker Compose) | À faire |
 | 4. Documentation portfolio | Architecture, choix techniques, limites | À faire |
 
@@ -17,6 +17,7 @@ Pipeline de données quotidien sur Google Cloud. Il extrait la météo de plusie
 config/cities.json          villes interrogées (nom, latitude, longitude)
 pipeline_meteo/extract.py   extraction API → NDJSON partitionné par date
 pipeline_meteo/secrets.py   lecture de la clé (.env ou Secret Manager)
+pipeline_meteo/load.py      envoi dans Cloud Storage puis chargement BigQuery
 tests/                      tests unitaires (sans appel réseau)
 docs/                       installation GCP et sécurité
 ```
@@ -32,9 +33,10 @@ pip install -r requirements-dev.txt
 cp .env.example .env        # puis renseigner les valeurs
 pytest
 python -m pipeline_meteo.extract --date 2026-10-26
+python -m pipeline_meteo.load --date 2026-10-26
 ```
 
-Le fichier produit est `data/raw/date=2026-10-26/weather.ndjson`, avec une ligne par ville. Relancer la même date remplace le fichier sans créer de doublon.
+Le fichier produit est `data/raw/date=2026-10-26/weather.ndjson`, avec une ligne par ville. Le chargement le copie dans Cloud Storage, puis dans la table BigQuery `meteo_raw.weather_raw` (détails : [docs/02_chargement.md](docs/02_chargement.md)). Relancer la même date remplace les données de ce jour, sans créer de doublon.
 
 ## Sécurité
 
