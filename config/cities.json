@@ -1,0 +1,7 @@
+[
+  {"name": "Paris", "country": "FR", "lat": 48.8566, "lon": 2.3522},
+  {"name": "Lyon", "country": "FR", "lat": 45.7640, "lon": 4.8357},
+  {"name": "Marseille", "country": "FR", "lat": 43.2965, "lon": 5.3698},
+  {"name": "Toulouse", "country": "FR", "lat": 43.6047, "lon": 1.4442},
+  {"name": "Lille", "country": "FR", "lat": 50.6292, "lon": 3.0573}
+]

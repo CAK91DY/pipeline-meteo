@@ -218,3 +218,13 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# --- Spécifique au projet ---
+# Secrets : ne jamais versionner (.env est déjà exclu plus haut)
+*.key
+*-key.json
+credentials*.json
+service-account*.json
+
+# Données extraites localement
+data/
