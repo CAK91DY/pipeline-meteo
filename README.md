@@ -18,6 +18,7 @@ config/cities.json          villes interrogées (nom, latitude, longitude)
 pipeline_meteo/extract.py   extraction API → NDJSON partitionné par date
 pipeline_meteo/secrets.py   lecture de la clé (.env ou Secret Manager)
 pipeline_meteo/load.py      envoi dans Cloud Storage puis chargement BigQuery
+notebooks/                  exploration des données en local
 tests/                      tests unitaires (sans appel réseau)
 docs/                       installation GCP et sécurité
 ```
@@ -37,6 +38,16 @@ python -m pipeline_meteo.load --date 2026-10-26
 ```
 
 Le fichier produit est `data/raw/date=2026-10-26/weather.ndjson`, avec une ligne par ville. Le chargement le copie dans Cloud Storage, puis dans la table BigQuery `meteo_raw.weather_raw` (détails : [docs/02_chargement.md](docs/02_chargement.md)). Relancer la même date remplace les données de ce jour, sans créer de doublon.
+
+## Explorer les données en local
+
+Avant d'utiliser le cloud, on peut produire quelques fichiers et les analyser dans [notebooks/01_exploration_donnees_meteo.ipynb](notebooks/01_exploration_donnees_meteo.ipynb). Il suffit de la clé API dans `.env` : aucun compte Google Cloud n'est nécessaire.
+
+```bash
+python -m pipeline_meteo.extract --output-dir data/exploration/run1
+# quelques heures plus tard
+python -m pipeline_meteo.extract --output-dir data/exploration/run2
+```
 
 ## Sécurité
 

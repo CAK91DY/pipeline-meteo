@@ -1,2 +1,7 @@
 -r requirements.txt
 pytest>=8,<10
+
+# Exploration (notebooks/)
+pandas>=2.2,<4
+matplotlib>=3.8,<4
+ipykernel>=6.29,<8
