@@ -4,20 +4,25 @@
 
 | Risque | Mesure dans le projet |
 |---|---|
-| Clé API publiée sur GitHub | La clé n'est jamais dans le code. `.env` et les fichiers d'identifiants sont dans `.gitignore`, et seul `.env.example` (vide) est versionné. |
-| Clé visible dans les logs ou les erreurs | Les erreurs HTTP sont réécrites sans l'URL (qui contient la clé), et la chaîne d'exceptions est coupée (`from None`). Un test unitaire le vérifie. |
-| Clé stockée en clair sur le poste | Option recommandée : la clé vit dans Secret Manager et n'est lue qu'au moment de l'exécution. |
+| Jeton publié sur GitHub | Le jeton Kaggle n'est jamais dans le code. `.env` et les fichiers d'identifiants sont dans `.gitignore`, et seul `.env.example` (vide) est versionné. |
+| Secret visible dans les logs ou les erreurs | Les erreurs HTTP sont réécrites sans l'URL complète (qui pourrait contenir un secret), et la chaîne d'exceptions est coupée (`from None`). Un test unitaire le vérifie. |
+| Jeton stocké en clair sur le poste | Option recommandée : le jeton vit dans Secret Manager et n'est lue qu'au moment de l'exécution. |
 | Fuite d'un fichier de compte de service | Aucune clé JSON n'est créée : authentification par emprunt d'identité, avec des jetons temporaires. |
 | Droits trop larges | Compte de service dédié, droits Storage limités au bucket, secret lisible par ce seul compte. |
 | Bucket exposé publiquement | Accès uniforme et blocage de l'accès public activés à la création. |
 | Dérive des coûts | Alerte budgétaire sur le compte de facturation. |
 
-## Si une clé a fuité
+## Si le jeton a fuité
 
-1. Régénérer la clé sur openweathermap.org et supprimer l'ancienne.
+1. Sur kaggle.com, dans *Settings > API*, révoquer l'ancien jeton et en générer un nouveau.
 2. Ajouter une nouvelle version du secret :
-   `read -s OWM_KEY; printf '%s' "$OWM_KEY" | gcloud secrets versions add openweather-api-key --data-file=-; unset OWM_KEY`
-3. Si la clé a été poussée sur GitHub, la supprimer du dépôt ne suffit pas : l'historique la conserve. La régénération (point 1) est la seule protection fiable.
+   `read -s KAGGLE_TOKEN; printf '%s' "$KAGGLE_TOKEN" | gcloud secrets versions add kaggle-api-token --data-file=-; unset KAGGLE_TOKEN`
+3. Si le jeton a été poussé sur GitHub, la supprimer du dépôt ne suffit pas : l'historique la conserve. La régénération (point 1) est la seule protection fiable.
+
+## Bonnes pratiques à retenir
+
+- Le vrai secret va dans `.env`, jamais dans `.env.example` : ce dernier est publié sur GitHub.
+- Avant d'envoyer une capture d'écran, masquer les jetons et les clés qui y apparaissent.
 
 ## Vérification avant chaque commit
 

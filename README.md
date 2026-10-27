@@ -1,54 +1,56 @@
-# Pipeline météo : API → Cloud Storage → BigQuery → dbt, orchestré par Airflow
+# Pipeline retail : Olist enrichi, de l'API à BigQuery, orchestré par Airflow
 
-Pipeline de données quotidien sur Google Cloud. Il extrait la météo de plusieurs villes françaises depuis l'API OpenWeatherMap, conserve la réponse brute dans Cloud Storage, la charge dans BigQuery, puis la transforme avec dbt. Airflow, lancé en local avec Docker Compose, planifie les étapes, gère les erreurs et permet de relancer une date.
+Pipeline de données quotidien sur Google Cloud, conçu pour alimenter des **tableaux de bord retail** : chiffre d'affaires, saisonnalité, baisse des ventes, produits, régions, livraisons.
+
+- **Source principale :** les commandes e-commerce [Olist](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce) (Brésil, 2016-2018), rejouées jour par jour comme un flux quotidien.
+- **Enrichissements par API :** taux de change BRL/EUR (BCE), jours fériés brésiliens, population et régions par État (IBGE).
+- **Chaîne :** extraction Python → Cloud Storage (brut) → BigQuery → dbt → tableaux de bord Looker Studio, le tout orchestré par Airflow.
 
 ## Avancement
 
 | Étape | Contenu | État |
 |---|---|---|
-| 1. Fondations | Extraction Python, gestion sécurisée de la clé, ressources GCP | Fait |
+| 1. Fondations | Code d'extraction, gestion sécurisée des secrets, ressources GCP | Fait |
 | 2. Chargement | Envoi dans Cloud Storage, chargement idempotent dans BigQuery | Fait |
-| 3. Transformation et orchestration | Modèles et tests dbt, DAG Airflow (Docker Compose) | À faire |
-| 4. Documentation portfolio | Architecture, choix techniques, limites | À faire |
+| 3. Exploration | Notebook : qualité des données, saisonnalité, pièges du jeu | À faire |
+| 4. Transformation et orchestration | Modèles et tests dbt, DAG Airflow (Docker Compose) | À faire |
+| 5. Tableaux de bord et documentation | Looker Studio, architecture, choix techniques, limites | À faire |
 
 ## Structure
 
 ```
-config/cities.json          villes interrogées (nom, latitude, longitude)
-pipeline_meteo/extract.py   extraction API → NDJSON partitionné par date
-pipeline_meteo/secrets.py   lecture de la clé (.env ou Secret Manager)
-pipeline_meteo/load.py      envoi dans Cloud Storage puis chargement BigQuery
-notebooks/                  exploration des données en local
-tests/                      tests unitaires (sans appel réseau)
-docs/                       installation GCP et sécurité
+pipeline_retail/
+  config.py            paramètres centraux (URL, fichiers, liste des tables)
+  secrets.py           lecture des secrets (.env ou Secret Manager)
+  http.py              appels d'API avec nouvelles tentatives et erreurs sans secret
+  storage.py           écriture des fichiers bruts NDJSON
+  load.py              envoi Cloud Storage puis chargement BigQuery
+  cli.py               les commandes du pipeline
+  sources/
+    olist.py           téléchargement Kaggle et rejeu jour par jour
+    fx_rates.py        taux de change (Frankfurter)
+    holidays.py        jours fériés (Nager.Date)
+    ibge.py            États et population (IBGE)
+tests/                 tests unitaires (sans réseau ni Google Cloud)
+docs/                  installation, sources et chargement, sécurité
 ```
 
 ## Démarrage rapide
 
-1. Préparer Google Cloud et la clé API : [docs/01_installation_gcp.md](docs/01_installation_gcp.md)
+1. Préparer Google Cloud et le jeton Kaggle : [docs/01_installation_gcp.md](docs/01_installation_gcp.md)
 2. Installer et lancer :
 
 ```bash
 python -m venv .venv && source .venv/bin/activate
-pip install -r requirements-dev.txt
-cp .env.example .env        # puis renseigner les valeurs
+python -m pip install -r requirements-dev.txt
+cp .env.example .env                       # puis renseigner les valeurs dans .env
 pytest
-python -m pipeline_meteo.extract --date 2026-10-26
-python -m pipeline_meteo.load --date 2026-10-26
+python -m pipeline_retail download-olist   # télécharge les CSV Olist (une fois)
+python -m pipeline_retail extract-daily --date 2017-11-24
 ```
 
-Le fichier produit est `data/raw/date=2026-10-26/weather.ndjson`, avec une ligne par ville. Le chargement le copie dans Cloud Storage, puis dans la table BigQuery `meteo_raw.weather_raw` (détails : [docs/02_chargement.md](docs/02_chargement.md)). Relancer la même date remplace les données de ce jour, sans créer de doublon.
-
-## Explorer les données en local
-
-Avant d'utiliser le cloud, on peut produire quelques fichiers et les analyser dans [notebooks/01_exploration_donnees_meteo.ipynb](notebooks/01_exploration_donnees_meteo.ipynb). Il suffit de la clé API dans `.env` : aucun compte Google Cloud n'est nécessaire.
-
-```bash
-python -m pipeline_meteo.extract --output-dir data/exploration/run1
-# quelques heures plus tard
-python -m pipeline_meteo.extract --output-dir data/exploration/run2
-```
+La dernière commande écrit les commandes du Black Friday 2017 et le taux de change du jour dans `data/raw/`, sans avoir besoin de Google Cloud. Le chargement dans BigQuery est décrit dans [docs/02_sources_et_chargement.md](docs/02_sources_et_chargement.md).
 
 ## Sécurité
 
-La clé API n'est jamais dans le code ni dans les logs. Voir [docs/securite_cles_api.md](docs/securite_cles_api.md).
+Le jeton Kaggle n'est jamais dans le code ni dans les logs. Voir [docs/securite_cles_api.md](docs/securite_cles_api.md).
