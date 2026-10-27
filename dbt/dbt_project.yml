@@ -1,0 +1,37 @@
+# Configuration du projet dbt : transforme les données brutes en tables prêtes pour les tableaux de bord.
+# Couches :
+#   staging : une table propre par table brute (types corrects, doublons retirés)
+#   marts   : faits et dimensions utilisés par les tableaux de bord
+name: retail
+version: "1.0.0"
+profile: retail                 # nom du profil de connexion, défini dans profiles.yml
+
+model-paths: ["models"]
+macro-paths: ["macros"]
+test-paths: ["tests"]
+clean-targets: ["target", "logs"]   # dossiers supprimés par "dbt clean"
+
+vars:
+  # Dossier des fichiers bruts écrits par le pipeline Python (relatif au dossier dbt/)
+  raw_dir: ../data/raw
+  # Calendrier complet couvert par Olist
+  calendar_start: "2016-09-01"
+  calendar_end: "2018-10-31"
+  # Fenêtre d'analyse fiable, établie dans notebooks/01_exploration_olist.ipynb :
+  # mois complets uniquement, et coupure à l'arrêt de la collecte (22/08/2018).
+  analysis_start: "2017-02-01"
+  analysis_end: "2018-08-21"
+  # Année de population utilisée pour les indicateurs par habitant
+  population_year: 2017
+
+models:
+  retail:
+    staging:
+      # En local (DuckDB), on matérialise en tables : les vues garderaient un chemin
+      # relatif vers data/raw et ne fonctionneraient que depuis le dossier dbt/.
+      # Sur BigQuery, des vues suffisent (pas de stockage en double).
+      +materialized: "{{ 'table' if target.type == 'duckdb' else 'view' }}"
+      +schema: staging
+    marts:
+      +materialized: table
+      +schema: marts

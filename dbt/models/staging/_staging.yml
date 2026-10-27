@@ -1,0 +1,44 @@
+# Tests de la couche staging : on vérifie les clés dès l'entrée, avant tout calcul.
+version: 2
+
+models:
+  - name: stg_olist__orders
+    columns:
+      - name: order_id
+        data_tests: [unique, not_null]
+      - name: purchased_at
+        data_tests: [not_null]
+  - name: stg_olist__order_items
+    columns:
+      - name: order_item_key
+        data_tests: [unique, not_null]
+      - name: order_id
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_olist__orders')
+                field: order_id
+  - name: stg_olist__order_payments
+    columns:
+      - name: payment_key
+        data_tests: [unique, not_null]
+  - name: stg_olist__order_reviews
+    columns:
+      - name: review_key
+        data_tests: [unique, not_null]
+  - name: stg_olist__customers
+    columns:
+      - name: customer_id
+        data_tests: [unique, not_null]
+  - name: stg_olist__products
+    columns:
+      - name: product_id
+        data_tests: [unique, not_null]
+  - name: stg_frankfurter__fx_rates
+    columns:
+      - name: rate_date
+        data_tests: [unique, not_null]
+  - name: stg_ibge__states
+    columns:
+      - name: state_abbr
+        data_tests: [unique, not_null]

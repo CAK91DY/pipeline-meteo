@@ -8,3 +8,7 @@ seaborn>=0.13,<1
 duckdb>=1.1,<3
 statsmodels>=0.14,<1     # décomposition STL (saisonnalité)
 ipykernel>=6.29,<8
+
+# Transformations (dbt/) : dbt en local sur DuckDB
+dbt-core>=1.10,<2
+dbt-duckdb>=1.9,<2
