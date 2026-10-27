@@ -72,25 +72,42 @@ def read_table(source_dir: Path, table: str) -> list[dict]:
 
 def extract_daily(source_dir: Path, run_date: date) -> dict[str, list[dict]]:
     """Rejoue une journée : les commandes du jour et tout ce qui leur est rattaché."""
-    day = run_date.isoformat()   # par exemple "2017-11-24"
+    return extract_range(source_dir, run_date, run_date)[run_date]
 
-    # 1. Les commandes dont la date d'achat tombe ce jour-là.
+
+def extract_range(source_dir: Path, start: date, end: date) -> dict[date, dict[str, list[dict]]]:
+    """Rejoue toutes les journées de start à end (incluses) en lisant les CSV une seule fois.
+
+    Renvoie {jour: {"orders": [...], "order_items": [...], ...}}. Chaque jour de la
+    période est présent, même sans commande : un fichier vide dit « rien ce jour-là »,
+    alors qu'un fichier absent laisserait croire que le jour n'a pas été traité.
+    """
+    # 1. Une entrée vide par jour de la période (toordinal numérote les jours, pour boucler simplement).
+    days = [date.fromordinal(n) for n in range(start.toordinal(), end.toordinal() + 1)]
+    result = {day: {"orders": [], "order_items": [], "order_payments": [], "order_reviews": []}
+              for day in days}
+
+    # 2. Les commandes, rangées selon leur date d'achat.
     #    order_purchase_timestamp ressemble à "2017-11-24 10:15:32" :
-    #    il suffit de comparer les 10 premiers caractères (la date).
-    orders = [row for row in read_table(source_dir, "orders")
-              if row["order_purchase_timestamp"][:10] == day]
+    #    les 10 premiers caractères donnent la date.
+    day_of_order = {}   # order_id -> jour d'achat, pour ranger ensuite les autres tables
+    for row in read_table(source_dir, "orders"):
+        day = date.fromisoformat(row["order_purchase_timestamp"][:10])
+        if day in result:   # on ignore les commandes hors période
+            result[day]["orders"].append(row)
+            day_of_order[row["order_id"]] = day
 
-    # 2. L'ensemble des identifiants de ces commandes (un set rend la recherche rapide).
-    order_ids = {row["order_id"] for row in orders}
-
-    # 3. Les lignes des autres tables qui appartiennent à ces commandes.
-    result = {"orders": orders}
+    # 3. Les articles, paiements et avis suivent le jour de leur commande.
     for table in ("order_items", "order_payments", "order_reviews"):
-        result[table] = [row for row in read_table(source_dir, table)
-                         if row["order_id"] in order_ids]
+        for row in read_table(source_dir, table):
+            day = day_of_order.get(row["order_id"])   # None si la commande est hors période
+            if day is not None:
+                result[day][table].append(row)
 
-    logger.info("Olist %s : %d commandes, %d articles", day,
-                len(orders), len(result["order_items"]))
+    n_orders = sum(len(tables["orders"]) for tables in result.values())
+    n_items = sum(len(tables["order_items"]) for tables in result.values())
+    period = str(start) if start == end else f"du {start} au {end}"
+    logger.info("Olist %s : %d commandes, %d articles", period, n_orders, n_items)
     return result
 
 

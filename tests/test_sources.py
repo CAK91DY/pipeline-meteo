@@ -105,3 +105,20 @@ def test_secret_absent(monkeypatch):
     monkeypatch.delenv("KAGGLE_API_TOKEN_SECRET_ID", raising=False)
     with pytest.raises(MissingSecretError, match="KAGGLE_API_TOKEN"):
         get_secret("KAGGLE_API_TOKEN")
+
+
+def test_taux_de_change_sur_une_periode_week_end_compris():
+    from datetime import date
+
+    from pipeline_retail.sources import fx_rates
+    from tests.conftest import FakeResponse, FakeSession
+    # Période commençant un samedi : l'API ajoute le vendredi précédent.
+    session = FakeSession({"https://api.frankfurter.dev/v1/2017-11-25..2017-11-28": FakeResponse(200, {
+        "amount": 1.0, "base": "BRL", "start_date": "2017-11-24", "end_date": "2017-11-28",
+        "rates": {"2017-11-24": {"EUR": 0.26056}, "2017-11-27": {"EUR": 0.25931},
+                  "2017-11-28": {"EUR": 0.26119}}})})
+    result = fx_rates.fetch_rates_range(session, date(2017, 11, 25), date(2017, 11, 28))
+
+    assert sorted(result) == [date(2017, 11, d) for d in (25, 26, 27, 28)]   # le vendredi 24 n'est pas demandé
+    assert result[date(2017, 11, 26)][0]["date"] == "2017-11-24"             # dimanche -> taux du vendredi
+    assert result[date(2017, 11, 27)][0]["rates"] == {"EUR": 0.25931}

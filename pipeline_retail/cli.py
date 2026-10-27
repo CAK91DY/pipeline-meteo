@@ -5,6 +5,7 @@
     python -m pipeline_retail extract-daily --date 2017-11-24
     python -m pipeline_retail load --scope daily --date 2017-11-24
     python -m pipeline_retail run-daily --date 2017-11-24    # extraction + chargement
+    python -m pipeline_retail backfill --start 2016-09-01 --end 2018-10-31  # tout rejouer en local
 """
 
 import argparse
@@ -23,12 +24,12 @@ logger = logging.getLogger(__name__)
 
 
 def save_tables(tables: dict[tuple[str, str], list[dict]], run_date: date,
-                raw_dir: Path = config.RAW_DIR) -> None:
+                raw_dir: Path = config.RAW_DIR, log_level: int = logging.INFO) -> None:
     """Écrit chaque table dans son fichier brut : {(source, table): enregistrements}."""
     for (source, table), records in tables.items():
         path = raw_file_path(raw_dir, source, table, run_date)
         write_ndjson(wrap_records(records, source, run_date), path)
-        logger.info("%s_%s : %d lignes -> %s", source, table, len(records), path)
+        logger.log(log_level, "%s_%s : %d lignes -> %s", source, table, len(records), path)
 
 
 def extract_daily(run_date: date, source_dir: Path = config.OLIST_SOURCE_DIR,
@@ -39,6 +40,26 @@ def extract_daily(run_date: date, source_dir: Path = config.OLIST_SOURCE_DIR,
     tables = {("olist", name): rows for name, rows in olist.extract_daily(source_dir, run_date).items()}
     tables[("frankfurter", "fx_rates")] = fx_rates.fetch_rates(session, run_date)
     save_tables(tables, run_date, raw_dir)
+
+
+def backfill(start: date, end: date, source_dir: Path = config.OLIST_SOURCE_DIR,
+             raw_dir: Path = config.RAW_DIR, session=None) -> None:
+    """Rejoue toute une période d'un coup (utile pour alimenter dbt en local).
+
+    Le résultat est identique à extract-daily lancé jour par jour, mais beaucoup plus
+    rapide : les CSV sont lus une seule fois et les taux de change demandés en un appel.
+    """
+    if start > end:
+        raise ValueError(f"Période invalide : {start} est après {end}")
+    session = session or build_session()
+    olist_days = olist.extract_range(source_dir, start, end)
+    fx_days = fx_rates.fetch_rates_range(session, start, end)
+    for day, olist_tables in olist_days.items():
+        tables = {("olist", name): rows for name, rows in olist_tables.items()}
+        tables[("frankfurter", "fx_rates")] = fx_days.get(day, [])
+        # DEBUG : on n'affiche pas les centaines de lignes de détail, seulement le bilan
+        save_tables(tables, day, raw_dir, log_level=logging.DEBUG)
+    logger.info("Rejeu terminé : %d jours écrits dans %s", len(olist_days), raw_dir)
 
 
 def extract_reference(run_date: date, source_dir: Path = config.OLIST_SOURCE_DIR,
@@ -89,6 +110,10 @@ def main(argv=None) -> None:
     p = commands.add_parser("run-daily", help="Extraction puis chargement d'une journée")
     p.add_argument("--date", type=date.fromisoformat, required=True)
 
+    p = commands.add_parser("backfill", help="Rejoue toute une période en local")
+    p.add_argument("--start", type=date.fromisoformat, required=True)
+    p.add_argument("--end", type=date.fromisoformat, required=True)
+
     args = parser.parse_args(argv)
     load_dotenv()   # lit le fichier .env (secrets et paramètres GCP)
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -101,6 +126,8 @@ def main(argv=None) -> None:
         extract_reference(args.date)
     elif args.command == "load":
         load(args.scope, args.date)
+    elif args.command == "backfill":
+        backfill(args.start, args.end)
     elif args.command == "run-daily":
         extract_daily(args.date)
         load("daily", args.date)

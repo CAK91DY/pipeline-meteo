@@ -228,3 +228,9 @@ service-account*.json
 
 # Données extraites localement
 data/
+
+# dbt : fichiers générés à chaque exécution
+dbt/target/
+dbt/logs/
+dbt/dbt_packages/
+dbt/.user.yml

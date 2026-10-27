@@ -1,0 +1,20 @@
+# Connexions de dbt. Ce fichier ne contient aucun secret : il peut être versionné.
+retail:
+  target: dev                   # cible utilisée par défaut
+  outputs:
+    # Base DuckDB locale : un simple fichier, aucun serveur à installer.
+    dev:
+      type: duckdb
+      path: "{{ env_var('DBT_DUCKDB_PATH', '../data/retail.duckdb') }}"
+      threads: 4
+
+    # Cible BigQuery, à activer une fois le projet Google Cloud créé (voir docs/04_dbt.md).
+    # L'authentification passe par l'emprunt d'identité du compte de service : pas de clé JSON.
+    # bigquery:
+    #   type: bigquery
+    #   method: oauth
+    #   project: "{{ env_var('GCP_PROJECT_ID') }}"
+    #   dataset: retail
+    #   location: EU
+    #   impersonate_service_account: "{{ env_var('DBT_IMPERSONATE_SA') }}"
+    #   threads: 4

@@ -1,0 +1,69 @@
+# Les tables brutes, communes à toutes les sources : run_date, extracted_at, source, record (JSON).
+# - Sur BigQuery : tables du dataset retail_raw, chargées par "python -m pipeline_retail load".
+# - En local (DuckDB) : fichiers NDJSON de data/raw, lus directement grâce à "external_location".
+version: 2
+
+sources:
+  - name: retail_raw
+    description: "Données brutes du pipeline, une table par source et par type de données."
+    tables:
+      - name: olist_orders
+        description: "Commandes Olist, une ligne par commande (rejouées jour par jour)."
+        config:
+          meta:
+            external_location: "read_ndjson_objects('{{ var(\"raw_dir\") }}/olist/orders/*/data.ndjson')"
+      - name: olist_order_items
+        description: "Articles des commandes."
+        config:
+          meta:
+            external_location: "read_ndjson_objects('{{ var(\"raw_dir\") }}/olist/order_items/*/data.ndjson')"
+      - name: olist_order_payments
+        description: "Paiements des commandes (une commande peut avoir plusieurs moyens de paiement)."
+        config:
+          meta:
+            external_location: "read_ndjson_objects('{{ var(\"raw_dir\") }}/olist/order_payments/*/data.ndjson')"
+      - name: olist_order_reviews
+        description: "Avis clients."
+        config:
+          meta:
+            external_location: "read_ndjson_objects('{{ var(\"raw_dir\") }}/olist/order_reviews/*/data.ndjson')"
+      - name: olist_customers
+        description: "Clients (table de référence, instantané complet à chaque extraction)."
+        config:
+          meta:
+            external_location: "read_ndjson_objects('{{ var(\"raw_dir\") }}/olist/customers/*/data.ndjson')"
+      - name: olist_products
+        description: "Produits (table de référence)."
+        config:
+          meta:
+            external_location: "read_ndjson_objects('{{ var(\"raw_dir\") }}/olist/products/*/data.ndjson')"
+      - name: olist_sellers
+        description: "Vendeurs (table de référence)."
+        config:
+          meta:
+            external_location: "read_ndjson_objects('{{ var(\"raw_dir\") }}/olist/sellers/*/data.ndjson')"
+      - name: olist_category_translation
+        description: "Traduction des catégories portugais -> anglais."
+        config:
+          meta:
+            external_location: "read_ndjson_objects('{{ var(\"raw_dir\") }}/olist/category_translation/*/data.ndjson')"
+      - name: frankfurter_fx_rates
+        description: "Taux de change BRL -> EUR et USD du jour (BCE, via Frankfurter)."
+        config:
+          meta:
+            external_location: "read_ndjson_objects('{{ var(\"raw_dir\") }}/frankfurter/fx_rates/*/data.ndjson')"
+      - name: nager_holidays
+        description: "Jours fériés brésiliens (Nager.Date)."
+        config:
+          meta:
+            external_location: "read_ndjson_objects('{{ var(\"raw_dir\") }}/nager/holidays/*/data.ndjson')"
+      - name: ibge_states
+        description: "États brésiliens et leur région (IBGE)."
+        config:
+          meta:
+            external_location: "read_ndjson_objects('{{ var(\"raw_dir\") }}/ibge/states/*/data.ndjson')"
+      - name: ibge_population
+        description: "Population estimée par État et par année (IBGE, table SIDRA 6579)."
+        config:
+          meta:
+            external_location: "read_ndjson_objects('{{ var(\"raw_dir\") }}/ibge/population/*/data.ndjson')"

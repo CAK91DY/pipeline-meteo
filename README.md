@@ -13,7 +13,7 @@ Pipeline de données quotidien sur Google Cloud, conçu pour alimenter des **tab
 | 1. Fondations | Code d'extraction, gestion sécurisée des secrets, ressources GCP | Fait |
 | 2. Chargement | Envoi dans Cloud Storage, chargement idempotent dans BigQuery | Fait |
 | 3. Exploration | Notebook : qualité des données, saisonnalité, baisses des ventes | Fait |
-| 4. Transformation et orchestration | Modèles et tests dbt, DAG Airflow (Docker Compose) | À faire |
+| 4. Transformation et orchestration | Modèles et tests dbt (fait, en local sur DuckDB), DAG Airflow (à faire) | En cours |
 | 5. Tableaux de bord et documentation | Looker Studio, architecture, choix techniques, limites | À faire |
 
 ## Structure
@@ -31,10 +31,11 @@ pipeline_retail/
     fx_rates.py        taux de change (Frankfurter)
     holidays.py        jours fériés (Nager.Date)
     ibge.py            États et population (IBGE)
+dbt/                   modèles SQL : staging (nettoyage) et marts (tableaux de bord)
 notebooks/
   01_exploration_olist.ipynb  qualité, période analysable, saisonnalité, baisses
 tests/                 tests unitaires (sans réseau ni Google Cloud)
-docs/                  installation, sources et chargement, résultats, sécurité
+docs/                  installation, sources et chargement, résultats, dbt, sécurité
 ```
 
 ## Démarrage rapide
@@ -56,6 +57,10 @@ La dernière commande écrit les commandes du Black Friday 2017 et le taux de ch
 ## Exploration
 
 Le notebook [notebooks/01_exploration_olist.ipynb](notebooks/01_exploration_olist.ipynb) lit les CSV de `data/olist_source/` et répond à six questions : fiabilité des données, période analysable, tendance, saisonnalité (jour, heure, Black Friday), baisses anormales (décomposition STL), produits, régions et livraisons. Il se termine par les décisions qui guideront les modèles dbt. Les résultats sont résumés dans [docs/03_resultats_exploration.md](docs/03_resultats_exploration.md).
+
+## Transformations dbt
+
+Le dossier `dbt/` transforme les données brutes en tables prêtes pour les tableaux de bord (`fct_orders`, `fct_daily_sales`, `dim_date`...), avec des tests automatiques. Mode d'emploi : [docs/04_dbt.md](docs/04_dbt.md).
 
 ## Sécurité
 

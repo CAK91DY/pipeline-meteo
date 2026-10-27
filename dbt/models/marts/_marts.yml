@@ -1,0 +1,77 @@
+# Documentation et tests des tables utilisées par les tableaux de bord.
+# "dbt build" exécute ces tests juste après avoir construit chaque table.
+version: 2
+
+models:
+  - name: dim_date
+    description: "Calendrier quotidien : jour de la semaine, fériés nationaux, Black Friday, fenêtre d'analyse."
+    columns:
+      - name: date_day
+        data_tests: [unique, not_null]
+      - name: iso_weekday
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [1, 2, 3, 4, 5, 6, 7]
+
+  - name: dim_products
+    description: "Produits avec leur catégorie en anglais (ou 'unknown')."
+    columns:
+      - name: product_id
+        data_tests: [unique, not_null]
+      - name: category
+        data_tests: [not_null]
+
+  - name: dim_states
+    description: "États brésiliens, région et population de l'année population_year."
+    columns:
+      - name: state_abbr
+        data_tests: [unique, not_null]
+
+  - name: fct_orders
+    description: "Une ligne par commande : montants en BRL et EUR, statut, livraison, note."
+    columns:
+      - name: order_id
+        data_tests: [unique, not_null]
+      - name: order_status
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [delivered, shipped, canceled, unavailable, invoiced, processing, created, approved]
+      - name: customer_state
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_states')
+                field: state_abbr
+      - name: revenue_brl
+        data_tests: [not_null]
+      - name: eur_per_brl
+        description: "Taux du jour d'achat. Absent seulement si le rejeu des taux n'a pas couvert ce jour."
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
+      - name: review_score
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [1, 2, 3, 4, 5]
+
+  - name: fct_order_items
+    description: "Une ligne par article vendu, avec sa catégorie et son vendeur."
+    columns:
+      - name: order_item_key
+        data_tests: [unique, not_null]
+      - name: product_id
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_products')
+                field: product_id
+
+  - name: fct_daily_sales
+    description: "Ventes quotidiennes sur la fenêtre d'analyse, jours sans commande compris (à 0)."
+    columns:
+      - name: date_day
+        data_tests: [unique, not_null]

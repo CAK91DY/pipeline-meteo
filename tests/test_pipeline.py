@@ -7,8 +7,13 @@ from google.cloud import bigquery
 from pipeline_retail import cli, config
 from pipeline_retail import load as ld
 from pipeline_retail.storage import raw_file_path, wrap_records, write_ndjson
+from tests.conftest import FakeResponse
 
 BLACK_FRIDAY = date(2017, 11, 24)
+# Réponse de l'API Frankfurter pour une période (format vérifié sur l'API réelle)
+FX_RANGE = FakeResponse(200, {
+    "amount": 1.0, "base": "BRL", "start_date": "2017-11-24", "end_date": "2017-11-24",
+    "rates": {"2017-11-24": {"EUR": 0.26056, "USD": 0.30947}}})
 SETTINGS = ld.GcpSettings(project_id="mon-projet", bucket="mon-bucket", dataset="retail_raw")
 
 
@@ -142,3 +147,32 @@ def test_variables_gcp_manquantes(monkeypatch):
     monkeypatch.setenv("GCS_BUCKET", "")
     with pytest.raises(ld.LoadError, match="GCP_PROJECT_ID, GCS_BUCKET"):
         ld.GcpSettings.from_env()
+
+
+# --- Rejeu complet d'une période ----------------------------------------------------
+
+def test_backfill_identique_au_rejeu_jour_par_jour(olist_dir, tmp_path, api_session):
+    start, end = date(2017, 11, 24), date(2017, 11, 26)
+    api_session.routes = {"https://api.frankfurter.dev/v1/2017-11-24..": FX_RANGE, **api_session.routes}
+    cli.backfill(start, end, source_dir=olist_dir, raw_dir=tmp_path / "b", session=api_session)
+    cli.extract_daily(BLACK_FRIDAY, source_dir=olist_dir, raw_dir=tmp_path / "d", session=api_session)
+
+    # Pour le 24/11, le contenu est le même que par extract-daily (hors horodatage d'extraction)
+    for source, table in config.DAILY_TABLES:
+        b = read_ndjson(raw_file_path(tmp_path / "b", source, table, BLACK_FRIDAY))
+        d = read_ndjson(raw_file_path(tmp_path / "d", source, table, BLACK_FRIDAY))
+        assert [r["record"] for r in b] == [r["record"] for r in d], (source, table)
+
+    # Chaque jour a ses fichiers, même le 26/11 sans commande (fichier vide)
+    assert read_ndjson(raw_file_path(tmp_path / "b", "olist", "orders", date(2017, 11, 26))) == []
+    orders_25 = read_ndjson(raw_file_path(tmp_path / "b", "olist", "orders", date(2017, 11, 25)))
+    assert [r["record"]["order_id"] for r in orders_25] == ["o3"]
+    # Le dimanche 26/11 reçoit le taux du vendredi 24/11, comme l'API jour par jour
+    [fx_26] = read_ndjson(raw_file_path(tmp_path / "b", "frankfurter", "fx_rates", date(2017, 11, 26)))
+    assert fx_26["record"]["requested_date"] == "2017-11-26" and fx_26["record"]["date"] == "2017-11-24"
+
+
+def test_backfill_refuse_une_periode_inversee(olist_dir, tmp_path, api_session):
+    with pytest.raises(ValueError):
+        cli.backfill(date(2018, 1, 2), date(2018, 1, 1), source_dir=olist_dir,
+                     raw_dir=tmp_path, session=api_session)
