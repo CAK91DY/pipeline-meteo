@@ -7,7 +7,7 @@
 | **Olist** (Kaggle) | Fichiers CSV, rejoués jour par jour | Commandes, articles, paiements, avis, clients, produits, vendeurs (Brésil, 2016-2018) | — | Chiffre d'affaires, panier moyen, produits, clients, livraisons |
 | **Frankfurter** (BCE) | API, sans clé | Taux de change BRL → EUR et USD | date | Montants en euros |
 | **Nager.Date** | API, sans clé | Jours fériés brésiliens | date (+ État pour les fêtes locales) | Effet des fêtes sur les ventes |
-| **IBGE** | API, sans clé | États (sigle, région) et population estimée | sigle de l'État (`SP`, `RJ`...) | Ventes par habitant, analyse régionale |
+| **IBGE** | API sans clé, accessible seulement depuis le Brésil : données versionnées dans `dbt/seeds/` | États (sigle, région) et population estimée | sigle de l'État (`SP`, `RJ`...) | Ventes par habitant, analyse régionale |
 
 ## Pourquoi « rejouer » Olist
 
@@ -32,7 +32,7 @@ API IBGE ─────────────────────┘     
 Deux familles de tables :
 
 - **Quotidiennes**, rechargées pour chaque date : `olist_orders`, `olist_order_items`, `olist_order_payments`, `olist_order_reviews`, `frankfurter_fx_rates`.
-- **De référence**, chargées une fois : `olist_customers`, `olist_products`, `olist_sellers`, `olist_category_translation`, `nager_holidays`, `ibge_states`, `ibge_population`.
+- **De référence**, chargées une fois : `olist_customers`, `olist_products`, `olist_sellers`, `olist_category_translation`, `nager_holidays`. Les données IBGE ne passent pas par ce circuit : ce sont des fichiers CSV du dépôt (`dbt/seeds/`), chargés par dbt.
 
 ## Un format brut unique
 
@@ -42,7 +42,7 @@ Toutes les tables brutes ont les mêmes 4 colonnes :
 |---|---|---|
 | `run_date` | DATE | Date traitée, colonne de partition |
 | `extracted_at` | TIMESTAMP | Heure réelle de l'extraction |
-| `source` | STRING | `olist`, `frankfurter`, `nager` ou `ibge` |
+| `source` | STRING | `olist`, `frankfurter` ou `nager` |
 | `record` | JSON | L'enregistrement brut, sans aucune modification |
 
 Pourquoi ce choix :

@@ -15,7 +15,8 @@ dbt build --profiles-dir .
 ```
 
 - `backfill` rejoue toutes les journées d'Olist d'un coup. Il lit les CSV une seule fois et récupère les taux de change en un seul appel. Le résultat est identique à `extract-daily` lancé jour par jour.
-- `extract-reference` récupère les tables de référence : clients, produits, jours fériés, États et population.
+- `extract-reference` récupère les tables de référence : clients, produits, vendeurs, catégories et jours fériés.
+- Les États et la population viennent de fichiers CSV du dépôt (`dbt/seeds/`). En effet, l'API de l'IBGE ne répond qu'aux connexions venant du Brésil : depuis la France, elle expire. `dbt build` charge ces fichiers automatiquement.
 - `dbt build` construit toutes les tables et exécute les tests. Chaque ligne doit finir en `PASS` ou `OK`.
 
 Pour explorer le résultat :
@@ -31,6 +32,7 @@ dbt/
   dbt_project.yml        paramètres, dont la fenêtre d'analyse (analysis_start, analysis_end)
   profiles.yml           connexion DuckDB (et BigQuery, commentée pour plus tard)
   macros/                fonctions SQL qui diffèrent entre DuckDB et BigQuery
+  seeds/                 données IBGE versionnées (États, population 2016-2018)
   models/staging/        une table propre par table brute (types, doublons)
   models/marts/          faits et dimensions pour les tableaux de bord
   tests/                 tests de cohérence écrits à la main

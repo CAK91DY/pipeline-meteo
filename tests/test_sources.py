@@ -122,3 +122,12 @@ def test_taux_de_change_sur_une_periode_week_end_compris():
     assert sorted(result) == [date(2017, 11, d) for d in (25, 26, 27, 28)]   # le vendredi 24 n'est pas demandé
     assert result[date(2017, 11, 26)][0]["date"] == "2017-11-24"             # dimanche -> taux du vendredi
     assert result[date(2017, 11, 27)][0]["rates"] == {"EUR": 0.25931}
+
+
+def test_fichiers_ibge_pour_dbt(api_session, tmp_path):
+    ibge.write_seeds(api_session, seeds_dir=tmp_path, years=(2017,))
+    states = (tmp_path / "ibge_states.csv").read_text(encoding="utf-8").splitlines()
+    population = (tmp_path / "ibge_population.csv").read_text(encoding="utf-8").splitlines()
+    assert states == ["state_code,state_abbr,state_name,region_abbr,region_name",
+                      "35,SP,São Paulo,SE,Sudeste"]
+    assert population == ["state_code,population_year,population", "35,2017,45094866"]

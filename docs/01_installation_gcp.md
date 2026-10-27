@@ -8,7 +8,7 @@ Les commandes se lancent dans un terminal où le [SDK Google Cloud](https://clou
 - Un compte Google et un compte de facturation (l'essai gratuit de Google Cloud suffit).
 - Python 3.11 ou plus récent.
 - Un jeton Kaggle, pour télécharger le jeu Olist : créer un compte sur [kaggle.com](https://www.kaggle.com), puis dans *Settings > API*, cliquer sur *Generate New Token* et copier le jeton affiché.
-- Les autres sources (taux de change, jours fériés, IBGE) sont des API publiques sans clé.
+- Les autres sources (taux de change, jours fériés) sont des API publiques sans clé. Les données de l'IBGE sont fournies dans le dépôt (`dbt/seeds/`).
 
 ## 1. Variables utilisées dans ce guide
 

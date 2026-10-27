@@ -8,6 +8,7 @@ profile: retail                 # nom du profil de connexion, défini dans profi
 
 model-paths: ["models"]
 macro-paths: ["macros"]
+seed-paths: ["seeds"]
 test-paths: ["tests"]
 clean-targets: ["target", "logs"]   # dossiers supprimés par "dbt clean"
 
@@ -35,3 +36,14 @@ models:
     marts:
       +materialized: table
       +schema: marts
+
+# Fichiers CSV versionnés dans seeds/, chargés en tables par "dbt seed" (ou "dbt build").
+seeds:
+  retail:
+    +schema: reference
+    ibge_states:
+      +column_types:
+        state_code: varchar     # un code, pas un nombre : on le garde en texte
+    ibge_population:
+      +column_types:
+        state_code: varchar

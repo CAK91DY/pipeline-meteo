@@ -57,13 +57,3 @@ sources:
         config:
           meta:
             external_location: "read_ndjson_objects('{{ var(\"raw_dir\") }}/nager/holidays/*/data.ndjson')"
-      - name: ibge_states
-        description: "États brésiliens et leur région (IBGE)."
-        config:
-          meta:
-            external_location: "read_ndjson_objects('{{ var(\"raw_dir\") }}/ibge/states/*/data.ndjson')"
-      - name: ibge_population
-        description: "Population estimée par État et par année (IBGE, table SIDRA 6579)."
-        config:
-          meta:
-            external_location: "read_ndjson_objects('{{ var(\"raw_dir\") }}/ibge/population/*/data.ndjson')"
