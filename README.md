@@ -12,7 +12,7 @@ Pipeline de données quotidien sur Google Cloud, conçu pour alimenter des **tab
 |---|---|---|
 | 1. Fondations | Code d'extraction, gestion sécurisée des secrets, ressources GCP | Fait |
 | 2. Chargement | Envoi dans Cloud Storage, chargement idempotent dans BigQuery | Fait |
-| 3. Exploration | Notebook : qualité des données, saisonnalité, pièges du jeu | À faire |
+| 3. Exploration | Notebook : qualité des données, saisonnalité, baisses des ventes | Fait |
 | 4. Transformation et orchestration | Modèles et tests dbt, DAG Airflow (Docker Compose) | À faire |
 | 5. Tableaux de bord et documentation | Looker Studio, architecture, choix techniques, limites | À faire |
 
@@ -31,6 +31,8 @@ pipeline_retail/
     fx_rates.py        taux de change (Frankfurter)
     holidays.py        jours fériés (Nager.Date)
     ibge.py            États et population (IBGE)
+notebooks/
+  01_exploration_olist.ipynb  qualité, période analysable, saisonnalité, baisses
 tests/                 tests unitaires (sans réseau ni Google Cloud)
 docs/                  installation, sources et chargement, sécurité
 ```
@@ -50,6 +52,10 @@ python -m pipeline_retail extract-daily --date 2017-11-24
 ```
 
 La dernière commande écrit les commandes du Black Friday 2017 et le taux de change du jour dans `data/raw/`, sans avoir besoin de Google Cloud. Le chargement dans BigQuery est décrit dans [docs/02_sources_et_chargement.md](docs/02_sources_et_chargement.md).
+
+## Exploration
+
+Le notebook [notebooks/01_exploration_olist.ipynb](notebooks/01_exploration_olist.ipynb) lit les CSV de `data/olist_source/` et répond à six questions : fiabilité des données, période analysable, tendance, saisonnalité (jour, heure, Black Friday), baisses anormales (décomposition STL), produits, régions et livraisons. Il se termine par les décisions qui guideront les modèles dbt.
 
 ## Sécurité
 
