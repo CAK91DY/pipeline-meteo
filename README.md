@@ -34,7 +34,7 @@ pipeline_retail/
 notebooks/
   01_exploration_olist.ipynb  qualité, période analysable, saisonnalité, baisses
 tests/                 tests unitaires (sans réseau ni Google Cloud)
-docs/                  installation, sources et chargement, sécurité
+docs/                  installation, sources et chargement, résultats, sécurité
 ```
 
 ## Démarrage rapide
@@ -55,7 +55,7 @@ La dernière commande écrit les commandes du Black Friday 2017 et le taux de ch
 
 ## Exploration
 
-Le notebook [notebooks/01_exploration_olist.ipynb](notebooks/01_exploration_olist.ipynb) lit les CSV de `data/olist_source/` et répond à six questions : fiabilité des données, période analysable, tendance, saisonnalité (jour, heure, Black Friday), baisses anormales (décomposition STL), produits, régions et livraisons. Il se termine par les décisions qui guideront les modèles dbt.
+Le notebook [notebooks/01_exploration_olist.ipynb](notebooks/01_exploration_olist.ipynb) lit les CSV de `data/olist_source/` et répond à six questions : fiabilité des données, période analysable, tendance, saisonnalité (jour, heure, Black Friday), baisses anormales (décomposition STL), produits, régions et livraisons. Il se termine par les décisions qui guideront les modèles dbt. Les résultats sont résumés dans [docs/03_resultats_exploration.md](docs/03_resultats_exploration.md).
 
 ## Sécurité
 
