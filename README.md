@@ -3,7 +3,7 @@
 Pipeline de données quotidien sur Google Cloud, conçu pour alimenter des **tableaux de bord retail** : chiffre d'affaires, saisonnalité, baisse des ventes, produits, régions, livraisons.
 
 - **Source principale :** les commandes e-commerce [Olist](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce) (Brésil, 2016-2018), rejouées jour par jour comme un flux quotidien.
-- **Enrichissements par API :** taux de change BRL/EUR (BCE), jours fériés brésiliens, population et régions par État (IBGE).
+- **Enrichissements par API :** taux de change BRL/EUR (BCE), jours fériés brésiliens, population et régions par État (IBGE, versionnées dans le dépôt car l'API n'est joignable que depuis le Brésil).
 - **Chaîne :** extraction Python → Cloud Storage (brut) → BigQuery → dbt → tableaux de bord Looker Studio, le tout orchestré par Airflow.
 
 ## Avancement
@@ -30,7 +30,7 @@ pipeline_retail/
     olist.py           téléchargement Kaggle et rejeu jour par jour
     fx_rates.py        taux de change (Frankfurter)
     holidays.py        jours fériés (Nager.Date)
-    ibge.py            États et population (IBGE)
+    ibge.py            États et population (IBGE), mise à jour de dbt/seeds
 dbt/                   modèles SQL : staging (nettoyage) et marts (tableaux de bord)
 notebooks/
   01_exploration_olist.ipynb  qualité, période analysable, saisonnalité, baisses

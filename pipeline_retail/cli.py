@@ -6,6 +6,7 @@
     python -m pipeline_retail load --scope daily --date 2017-11-24
     python -m pipeline_retail run-daily --date 2017-11-24    # extraction + chargement
     python -m pipeline_retail backfill --start 2016-09-01 --end 2018-10-31  # tout rejouer en local
+    python -m pipeline_retail refresh-ibge                   # met à jour dbt/seeds (réseau brésilien)
 """
 
 import argparse
@@ -64,13 +65,14 @@ def backfill(start: date, end: date, source_dir: Path = config.OLIST_SOURCE_DIR,
 
 def extract_reference(run_date: date, source_dir: Path = config.OLIST_SOURCE_DIR,
                       raw_dir: Path = config.RAW_DIR, session=None) -> None:
-    """Extrait les tables de référence : Olist, jours fériés, États, population."""
+    """Extrait les tables de référence : clients, produits, vendeurs, catégories, jours fériés."""
     session = session or build_session()
-    tables = {("olist", name): rows for name, rows in olist.extract_reference(source_dir).items()}
-    tables[("nager", "holidays")] = holidays.fetch_holidays(session)
-    tables[("ibge", "states")] = ibge.fetch_states(session)
-    tables[("ibge", "population")] = ibge.fetch_population(session)
-    save_tables(tables, run_date, raw_dir)
+    # 1. Les tables Olist d'abord : elles viennent des CSV locaux et ne peuvent pas
+    #    échouer à cause du réseau. Elles sont donc écrites même si l'API suivante ne répond pas.
+    save_tables({("olist", name): rows for name, rows in olist.extract_reference(source_dir).items()},
+                run_date, raw_dir)
+    # 2. Les jours fériés, qui demandent un appel réseau.
+    save_tables({("nager", "holidays"): holidays.fetch_holidays(session)}, run_date, raw_dir)
 
 
 def load(scope: str, run_date: date, raw_dir: Path = config.RAW_DIR) -> None:
@@ -114,6 +116,8 @@ def main(argv=None) -> None:
     p.add_argument("--start", type=date.fromisoformat, required=True)
     p.add_argument("--end", type=date.fromisoformat, required=True)
 
+    commands.add_parser("refresh-ibge", help="Met à jour les fichiers IBGE de dbt/seeds")
+
     args = parser.parse_args(argv)
     load_dotenv()   # lit le fichier .env (secrets et paramètres GCP)
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -126,6 +130,8 @@ def main(argv=None) -> None:
         extract_reference(args.date)
     elif args.command == "load":
         load(args.scope, args.date)
+    elif args.command == "refresh-ibge":
+        ibge.write_seeds(build_session())
     elif args.command == "backfill":
         backfill(args.start, args.end)
     elif args.command == "run-daily":

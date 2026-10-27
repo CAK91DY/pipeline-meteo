@@ -90,7 +90,8 @@ def api_session():
         "https://date.nager.at/": FakeResponse(200, [
             {"date": "2017-12-25", "localName": "Natal", "global": True}]),
         "https://servicodados.ibge.gov.br/": FakeResponse(200, [
-            {"id": 35, "sigla": "SP", "nome": "São Paulo"}]),
+            {"id": 35, "sigla": "SP", "nome": "São Paulo",
+             "regiao": {"id": 3, "sigla": "SE", "nome": "Sudeste"}}]),
         "https://apisidra.ibge.gov.br/": FakeResponse(200, [
             SIDRA_HEADER, {"D1C": "35", "D3C": "2017", "V": "45094866"}]),
     })

@@ -16,19 +16,3 @@
     nullif(json_extract_string(record, '$.{{ path }}'), '')
 {%- endmacro %}
 
-
-{#-
-  Conversion en entier qui renvoie NULL au lieu d'échouer sur une valeur non numérique
-  (ex. "..." dans les tableaux de l'IBGE) : try_cast en DuckDB, safe_cast en BigQuery.
--#}
-{% macro try_cast_int(expression) -%}
-    {{ return(adapter.dispatch('try_cast_int')(expression)) }}
-{%- endmacro %}
-
-{% macro default__try_cast_int(expression) -%}
-    safe_cast({{ expression }} as int64)
-{%- endmacro %}
-
-{% macro duckdb__try_cast_int(expression) -%}
-    try_cast({{ expression }} as bigint)
-{%- endmacro %}

@@ -1,0 +1,26 @@
+# Données de référence de l'IBGE, stockées en CSV dans le dépôt.
+# Pourquoi pas une API ? Les API de l'IBGE ne répondent qu'aux connexions venant du Brésil.
+# Ces chiffres changent très rarement : les versionner rend le projet reproductible partout.
+# Mise à jour : python -m pipeline_retail refresh-ibge (depuis un réseau qui joint l'IBGE).
+version: 2
+
+seeds:
+  - name: ibge_states
+    description: >
+      Les 27 unités fédératives du Brésil (26 États et le District fédéral).
+      Source : API IBGE localidades/estados, récupérée le 27/10/2026.
+    columns:
+      - name: state_code
+        description: "Code IBGE de l'État (ex. 35 pour São Paulo)."
+        data_tests: [unique, not_null]
+      - name: state_abbr
+        description: "Sigle de l'État, clé commune avec Olist (customer_state, seller_state)."
+        data_tests: [unique, not_null]
+
+  - name: ibge_population
+    description: >
+      Population résidente estimée par État, 2016 à 2018.
+      Source : IBGE, table SIDRA 6579, récupérée le 27/10/2026.
+    columns:
+      - name: population
+        data_tests: [not_null]

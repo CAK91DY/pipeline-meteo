@@ -16,6 +16,8 @@ OLIST_SOURCE_DIR = PROJECT_ROOT / "data" / "olist_source"
 
 # Dossier local où l'on écrit les fichiers bruts avant de les envoyer dans le cloud.
 RAW_DIR = PROJECT_ROOT / "data" / "raw"
+# Fichiers de référence versionnés, chargés par "dbt seed" (données IBGE)
+DBT_SEEDS_DIR = PROJECT_ROOT / "dbt" / "seeds"
 
 # --- Olist (Kaggle) -----------------------------------------------------------
 
@@ -72,6 +74,6 @@ REFERENCE_TABLES = (
     ("olist", "sellers"),
     ("olist", "category_translation"),
     ("nager", "holidays"),
-    ("ibge", "states"),
-    ("ibge", "population"),
 )
+# Les données IBGE (États, population) ne passent pas par ce circuit : l'API de l'IBGE
+# ne répond pas depuis l'étranger. Elles sont versionnées dans dbt/seeds/ (voir sources/ibge.py).
